@@ -107,7 +107,7 @@ func (client *Client) Run() error {
 
 		logger.Info(mainAction, logger.Success, messageArgs...)
 
-		time.Sleep(ECHO_CLIENT_MESSAGE_DELAY_MS * time.Millisecond)
+
 	}
 	logger.Info(mainAction, logger.Success, "agency-id", client.config.AgencyId)
 
