@@ -1,6 +1,8 @@
 package client
 
 import (
+	"bufio"
+	"os"
 	"net"
 	"time"
 
@@ -19,6 +21,8 @@ type ClientConfig struct {
 	ServerHost string
 	ServerPort string
 	AgencyId   string
+	InputFile  string
+	OutputFile string
 }
 
 type Client struct {
@@ -61,12 +65,18 @@ func connectToServer(host, port string) (net.Conn, error) {
 func (client *Client) Run() error {
 	const mainAction = "test-echo-server"
 	defer client.conn.Close()
+	file, err := os.Open(client.config.InputFile)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
 
-	for messageId := range ECHO_CLIENT_MESSAGE_AMOUNT {
-		messageArgs := []any{"agency-id", client.config.AgencyId, "message-id", messageId}
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		clientMessage := scanner.Text()
+		messageArgs := []any{"agency-id", client.config.AgencyId, "message", clientMessage}
 		logger.Info(mainAction, logger.InProgress, messageArgs...)
-
-		clientMessage := client.config.AgencyId
 
 		if err := safe_socket.SendAll(client.conn, []byte(clientMessage)); err != nil {
 			logger.Error("send-message", logger.Fail, messageArgs...)
@@ -83,6 +93,19 @@ func (client *Client) Run() error {
 			logger.Error("check-response", logger.Fail, messageArgs...)
 			return err
 		}
+		outputFile, err := os.OpenFile(client.config.OutputFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			logger.Error("open-output-file", logger.Fail, messageArgs...)
+			return err
+		}
+		defer outputFile.Close()
+
+		if _, err := outputFile.WriteString(clientMessage + "\n"); err != nil {
+			logger.Error("write-output-file", logger.Fail, messageArgs...)
+			return err
+		}
+
+		logger.Info(mainAction, logger.Success, messageArgs...)
 
 		time.Sleep(ECHO_CLIENT_MESSAGE_DELAY_MS * time.Millisecond)
 	}
