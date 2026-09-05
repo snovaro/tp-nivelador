@@ -1,6 +1,6 @@
 import csv
 
-from services.server.src_frozen.lottery import Lottery, Bet
+from services.server.src.lottery import Lottery, Bet
 from .utils import docker, docker_compose
 from .test_case import TestCase
 
