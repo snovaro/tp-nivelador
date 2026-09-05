@@ -22,8 +22,7 @@ class Lottery:
             return self.storage_path
 
         directory = os.path.dirname(self.storage_path)
-        filename = os.path.basename(self.storage_path)
-        agency_storage_filename = f"{self.agency_id}_{filename}"
+        agency_storage_filename = f"bets_{self.agency_id}.csv"
         if directory:
             return os.path.join(directory, agency_storage_filename)
         return agency_storage_filename

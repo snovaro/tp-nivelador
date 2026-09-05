@@ -1,5 +1,6 @@
 from lottery.bet import Bet
 from safe_socket.safe_socket import recv_all, send_all
+from server.message_type import MessageType
 
 class ServerProtocol:
     def __init__(self, client_socket) -> None:
@@ -11,16 +12,16 @@ class ServerProtocol:
     def receive(self, size: int) -> bytes:
         return recv_all(self.client_socket, size)
 
-    def receive_header(self) -> tuple[int, int]:
+    def receive_header(self) -> tuple[MessageType, int]:
         header = self.receive(3)
-        type_message = header[0]
+        type_message = MessageType(header[0])
         length = int.from_bytes(header[1:3], byteorder="big")
         return type_message, length
 
     def receive_payload(self, length: int) -> bytes:
         return self.receive(length)
 
-    def receive_message(self) -> tuple[int, bytes]:
+    def receive_message(self) -> tuple[MessageType, bytes]:
         type_message, length = self.receive_header()
         payload = self.receive_payload(length)
         return type_message, payload
@@ -58,3 +59,7 @@ class ServerProtocol:
         string_value = payload[pos : pos + length].decode("utf-8")
         pos += length
         return string_value, pos
+
+    def send_ack(self) -> None:
+        header = bytes([MessageType.ACK.value]) + (0).to_bytes(2, byteorder="big")
+        self.send(header)

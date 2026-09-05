@@ -12,9 +12,6 @@ import (
 const CONNECTION_ATTEMPTS_MAX = 3
 const CONNECTION_ATTEMPS_DELAY_MS = 200
 
-const ECHO_CLIENT_BUFFER_SIZE = 512
-const ECHO_CLIENT_MESSAGE_AMOUNT = 3
-const ECHO_CLIENT_MESSAGE_DELAY_MS = 1000
 
 type ClientConfig struct {
 	ServerHost string
@@ -87,6 +84,17 @@ func (client *Client) Run() error {
 			return err
 		}
 
+		typeMessage, _, err := receive_message(client.conn)
+		if err != nil {
+			logger.Error(mainAction, logger.Fail, messageArgs...)
+			return err
+		}
+		if typeMessage != 0x04 {
+			logger.Error(mainAction, logger.Fail, messageArgs...)
+			return err
+		}
+		logger.Info("ACK received", logger.Success, messageArgs...)
+
 		/* responseBuffer, err := safe_socket.RecvAll(client.conn, len(clientMessage))
 		if err != nil {
 			logger.Error("recv-response", logger.Fail, messageArgs...)
@@ -107,13 +115,17 @@ func (client *Client) Run() error {
 		if _, err := outputFile.WriteString(clientMessage + "\n"); err != nil {
 			logger.Error("write-output-file", logger.Fail, messageArgs...)
 			return err
-		} */
+		}
 
-		logger.Info(mainAction, logger.Success, messageArgs...)
+		logger.Info(mainAction, logger.Success, messageArgs...)*/
 
 
 	}
 	logger.Info(mainAction, logger.Success, "agency-id", client.config.AgencyId)
-
+	if err:= send_end(client.conn); err != nil {
+		logger.Error(mainAction, logger.Fail, "agency-id", client.config.AgencyId)
+		return err
+	}
+	logger.Info(mainAction, logger.Success, "end message sent")
 	return nil
 }

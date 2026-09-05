@@ -1,7 +1,8 @@
 from enum import Enum
 
 class MessageType(Enum):
+    ERROR = 0x00
     START = 0x01
     BET = 0x02
-    FIN = 0x03
-    ERROR = 0x04
+    END = 0x03
+    ACK = 0x04

@@ -89,3 +89,32 @@ func send_message(conn net.Conn, typeMessage byte, payload []byte) error {
 	logger.Info("send_message", logger.Success, "message sent", typeMessage)
 	return nil
 }
+
+func receive_message(conn net.Conn) (byte, []byte, error) {
+	logger.Info("receive_message", logger.InProgress, "receiving message")
+	header, err := safe_socket.RecvAll(conn, 3)
+	if err != nil {
+		logger.Error("receive_message", logger.Fail)
+		return 0, nil, err
+	}
+	typeMessage := header[0]
+	payloadSize := binary.BigEndian.Uint16(header[1:])
+	payload, err := safe_socket.RecvAll(conn, int(payloadSize))
+	if err != nil {
+		logger.Error("receive_message", logger.Fail)
+		return 0, nil, err
+	}
+	logger.Info("receive_message", logger.Success, "message received", typeMessage)
+	return typeMessage, payload, nil
+}
+
+func send_end(conn net.Conn) error {
+	const action = "send-end"
+	logger.Info(action, logger.InProgress, "sending end message")
+	if err := send_message(conn, 0x03, []byte{}); err != nil {
+		logger.Error(action, logger.Fail)
+		return err
+	}
+	logger.Info(action, logger.Success, "end message sent")
+	return nil
+}
