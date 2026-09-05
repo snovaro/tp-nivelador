@@ -15,44 +15,51 @@ func send_bet(conn net.Conn, bet Bet) error {
 }
 
 func serialize_bet(bet Bet) ([]byte, error) {
-	var payload []byte
 	logger.debug("serialize_bet", logger.InProgress, "serializing bet", bet)
 	agencyIdBytes := []byte(bet.AgencyId)
 	if len(agencyIdBytes) > 255 {
 		return nil, fmt.Errorf("agency id too long: %d bytes", len(agencyIdBytes))
 	}
-	lengthAgencyId := uint8(len(agencyIdBytes))
-	payload = append(payload, lengthAgencyId)
-	payload = append(payload, agencyIdBytes...)
 	nameBytes := []byte(bet.Name)
 	if len(nameBytes) > 255 {
 		return nil, fmt.Errorf("name too long: %d bytes", len(nameBytes))
 	}
-	lengthName := uint8(len(nameBytes))
-	payload = append(payload, lengthName)
-	payload = append(payload, nameBytes...)
 	surnameBytes := []byte(bet.Surname)
 	if len(surnameBytes) > 255 {
 		return nil, fmt.Errorf("surname too long: %d bytes", len(surnameBytes))
 	}
-	lengthSurname := uint8(len(surnameBytes))
-	payload = append(payload, lengthSurname)
-	payload = append(payload, surnameBytes...)
 	dniBytes := make([]byte, 4)
 	binary.BigEndian.PutUint32(dniBytes, bet.DNI)
-	payload = append(payload, dniBytes...)
 	yearBytes := make([]byte, 2)
 	binary.BigEndian.PutUint16(yearBytes, bet.Year)
-	payload = append(payload, yearBytes...)
 	month := uint8(bet.Month)
-	payload = append(payload, month)
 	day := uint8(bet.Day)
-	payload = append(payload, day)
 	betNumberBytes := make([]byte, 2)
 	binary.BigEndian.PutUint16(betNumberBytes, bet.BetNumber)
-	payload = append(payload, betNumberBytes...)
+	payload := build_bet_payload(agencyIdBytes, nameBytes, surnameBytes, dniBytes, yearBytes, month, day, betNumberBytes)
+
 	logger.debug("serialize_bet", logger.Success, "bet serialized", bet)
 	return payload, nil
+}
+
+func build_bet_payload(agencyIdBytes, nameBytes, surnameBytes, dniBytes, yearBytes []byte, month, day uint8, betNumberBytes []byte) []byte {
+	var payload []byte
+	payload = appendString(payload, string(agencyIdBytes))
+	payload = appendString(payload, string(nameBytes))
+	payload = appendString(payload, string(surnameBytes))
+	payload = append(payload, dniBytes...)
+	payload = append(payload, yearBytes...)
+	payload = append(payload, month)
+	payload = append(payload, day)
+	payload = append(payload, betNumberBytes...)
+	return payload
+}
+
+func appendString(payload []byte, value string) []byte {
+    bytes := []byte(value)
+    payload = append(payload, uint8(len(bytes)))
+    payload = append(payload, bytes...)
+    return payload
 }
 
 func send_message(conn net.Conn, typeMessage byte, payload []byte) error {
