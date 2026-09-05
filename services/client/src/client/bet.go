@@ -1,3 +1,5 @@
+package client
+
 type Bet struct {
     AgencyId   string
     Name        string

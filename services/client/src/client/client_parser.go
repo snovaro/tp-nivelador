@@ -1,3 +1,11 @@
+package client
+
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
+
 func parse_bet(betString string, agencyId string) (Bet, error) {
 	parts := strings.Split(betString, ",")
 	if len(parts) != 5 {
@@ -38,13 +46,13 @@ func parse_bet(betString string, agencyId string) (Bet, error) {
 	}
 
 	return Bet{
-		AgencyId:   agencyId,
-		Name:       name,
-		Surname:    surname,
-		DNI:        uint32(dni),
-		Year:       uint16(year),
-		Month:      uint8(month),
-		Day:        uint8(day),
-		BetNumber:  uint16(betNumber),
+		AgencyId:  agencyId,
+		Name:      name,
+		Surname:   surname,
+		DNI:       uint32(dni),
+		Year:      uint16(year),
+		Month:     uint8(month),
+		Day:       uint8(day),
+		BetNumber: uint16(betNumber),
 	}, nil
 }

@@ -1,3 +1,14 @@
+package client
+
+import (
+	"encoding/binary"
+	"fmt"
+	"net"
+
+	"github.com/7574-sistemas-distribuidos/tp-nivelador/src/logger"
+	"github.com/7574-sistemas-distribuidos/tp-nivelador/src/safe_socket"
+)
+
 func send_bet(conn net.Conn, bet Bet) error {
 	const action = "send-bet"
 	logger.Info(action, logger.InProgress, "sending bet", bet)
@@ -15,7 +26,7 @@ func send_bet(conn net.Conn, bet Bet) error {
 }
 
 func serialize_bet(bet Bet) ([]byte, error) {
-	logger.debug("serialize_bet", logger.InProgress, "serializing bet", bet)
+	logger.Info("serialize_bet", logger.InProgress, "serializing bet", bet)
 	agencyIdBytes := []byte(bet.AgencyId)
 	if len(agencyIdBytes) > 255 {
 		return nil, fmt.Errorf("agency id too long: %d bytes", len(agencyIdBytes))
@@ -38,7 +49,7 @@ func serialize_bet(bet Bet) ([]byte, error) {
 	binary.BigEndian.PutUint16(betNumberBytes, bet.BetNumber)
 	payload := build_bet_payload(agencyIdBytes, nameBytes, surnameBytes, dniBytes, yearBytes, month, day, betNumberBytes)
 
-	logger.debug("serialize_bet", logger.Success, "bet serialized", bet)
+	logger.Info("serialize_bet", logger.Success, "bet serialized", bet)
 	return payload, nil
 }
 
@@ -56,10 +67,10 @@ func build_bet_payload(agencyIdBytes, nameBytes, surnameBytes, dniBytes, yearByt
 }
 
 func appendString(payload []byte, value string) []byte {
-    bytes := []byte(value)
-    payload = append(payload, uint8(len(bytes)))
-    payload = append(payload, bytes...)
-    return payload
+	bytes := []byte(value)
+	payload = append(payload, uint8(len(bytes)))
+	payload = append(payload, bytes...)
+	return payload
 }
 
 func send_message(conn net.Conn, typeMessage byte, payload []byte) error {

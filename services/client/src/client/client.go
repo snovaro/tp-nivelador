@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/7574-sistemas-distribuidos/tp-nivelador/src/logger"
-	"github.com/7574-sistemas-distribuidos/tp-nivelador/src/safe_socket"
 )
 
 const CONNECTION_ATTEMPTS_MAX = 3
@@ -88,7 +87,7 @@ func (client *Client) Run() error {
 			return err
 		}
 
-		responseBuffer, err := safe_socket.RecvAll(client.conn, len(clientMessage))
+		/* responseBuffer, err := safe_socket.RecvAll(client.conn, len(clientMessage))
 		if err != nil {
 			logger.Error("recv-response", logger.Fail, messageArgs...)
 			return err
@@ -108,7 +107,7 @@ func (client *Client) Run() error {
 		if _, err := outputFile.WriteString(clientMessage + "\n"); err != nil {
 			logger.Error("write-output-file", logger.Fail, messageArgs...)
 			return err
-		}
+		} */
 
 		logger.Info(mainAction, logger.Success, messageArgs...)
 

@@ -1,13 +1,16 @@
 import socket
 
-# TODO: Complete with a short-read/short-write tolerant implementation
-
+TIMEOUT = 5  # Set a timeout of 5 seconds
 
 def recv_all(socket: socket.socket, size):
     bytes_recv = 0
     data = b""
+    socket.settimeout(TIMEOUT)
     while bytes_recv < size:
-        chunk = socket.recv(size - bytes_recv)
+        try:
+            chunk = socket.recv(size - bytes_recv)
+        except socket.timeout:
+            raise TimeoutError("Socket operation timed out")
         if not chunk:
             raise ConnectionError("Socket connection closed before receiving all data")
         data += chunk
