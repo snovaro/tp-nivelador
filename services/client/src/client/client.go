@@ -77,9 +77,14 @@ func (client *Client) Run() error {
 		clientMessage := scanner.Text()
 		messageArgs := []any{"agency-id", client.config.AgencyId, "message", clientMessage}
 		logger.Info(mainAction, logger.InProgress, messageArgs...)
+		bet, err := parse_bet(clientMessage, client.config.AgencyId)
+		if err != nil {
+			logger.Error(mainAction, logger.Fail, messageArgs...)
+			return err
+		}
 
-		if err := safe_socket.SendAll(client.conn, []byte(clientMessage)); err != nil {
-			logger.Error("send-message", logger.Fail, messageArgs...)
+		if err := send_bet(client.conn, bet); err != nil {
+			logger.Error(mainAction, logger.Fail, messageArgs...)
 			return err
 		}
 
