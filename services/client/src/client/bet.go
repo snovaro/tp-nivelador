@@ -1,4 +1,5 @@
 type Bet struct {
+    AgencyId   string
     Name        string
     Surname     string
     DNI         uint32
