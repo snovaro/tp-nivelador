@@ -59,7 +59,6 @@ func connectToServer(host, port string) (net.Conn, error) {
 }
 
 func (client *Client) Run() error {
-	const mainAction = "test-echo-server"
 	defer client.conn.Close()
 	file, err := os.Open(client.config.InputFile)
 	if err != nil {
@@ -72,60 +71,67 @@ func (client *Client) Run() error {
 	for scanner.Scan() {
 		clientMessage := scanner.Text()
 		messageArgs := []any{"agency-id", client.config.AgencyId, "message", clientMessage}
-		logger.Info(mainAction, logger.InProgress, messageArgs...)
+		logger.Info("parse-bet", logger.InProgress, messageArgs...)
 		bet, err := parse_bet(clientMessage, client.config.AgencyId)
 		if err != nil {
-			logger.Error(mainAction, logger.Fail, messageArgs...)
+			logger.Error("parse-bet", logger.Fail, messageArgs...)
 			return err
 		}
 
 		if err := send_bet(client.conn, bet); err != nil {
-			logger.Error(mainAction, logger.Fail, messageArgs...)
+			logger.Error("parse-bet", logger.Fail, messageArgs...)
 			return err
 		}
 
 		typeMessage, _, err := receive_message(client.conn)
 		if err != nil {
-			logger.Error(mainAction, logger.Fail, messageArgs...)
+			logger.Error("receive-message", logger.Fail, messageArgs...)
 			return err
 		}
 		if typeMessage != 0x04 {
-			logger.Error(mainAction, logger.Fail, messageArgs...)
+			logger.Error("receive-message", logger.Fail, messageArgs...)
 			return err
 		}
 		logger.Info("ACK received", logger.Success, messageArgs...)
 
-		/* responseBuffer, err := safe_socket.RecvAll(client.conn, len(clientMessage))
-		if err != nil {
-			logger.Error("recv-response", logger.Fail, messageArgs...)
-			return err
-		}
-
-		if string(responseBuffer) != clientMessage {
-			logger.Error("check-response", logger.Fail, messageArgs...)
-			return err
-		}
-		outputFile, err := os.OpenFile(client.config.OutputFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			logger.Error("open-output-file", logger.Fail, messageArgs...)
-			return err
-		}
-		defer outputFile.Close()
-
-		if _, err := outputFile.WriteString(clientMessage + "\n"); err != nil {
-			logger.Error("write-output-file", logger.Fail, messageArgs...)
-			return err
-		}
-
-		logger.Info(mainAction, logger.Success, messageArgs...)*/
-
-
 	}
-	logger.Info(mainAction, logger.Success, "agency-id", client.config.AgencyId)
+	logger.Info("send end", logger.Success, "agency-id", client.config.AgencyId)
 	if err:= send_end(client.conn); err != nil {
-		logger.Error(mainAction, logger.Fail, "agency-id", client.config.AgencyId)
+		logger.Error("send end", logger.Fail, "agency-id", client.config.AgencyId)
 		return err
 	}
-	logger.Info(mainAction, logger.Success, "end message sent")
+
+	typeMessage, payload, err := receive_message(client.conn)
+	if err != nil {
+		logger.Error("receive-winners", logger.Fail, "agency-id", client.config.AgencyId)
+		return err
+	}
+	if typeMessage != 0x05 {
+		logger.Error("receive-winners", logger.Fail, "agency-id", client.config.AgencyId)
+		return err
+	}
+
+	winners, err := deserialize_winners(payload)
+	logger.Info("deserialize-winners", logger.Success, "agency-id", client.config.AgencyId)
+	if err != nil {
+		logger.Error("receive-winners", logger.Fail, "agency-id", client.config.AgencyId)
+		return err
+	}
+	outputFile, err := os.OpenFile(client.config.OutputFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			logger.Error("open-output-file", logger.Fail, "output-file", client.config.OutputFile)
+			return err
+		}
+	defer outputFile.Close()
+
+	for _, winner := range winners {
+		winnerString := unparse_bet(winner)
+		if _, err := outputFile.WriteString(winnerString + "\n"); err != nil {
+			logger.Error("write-output-file", logger.Fail, "output-file", client.config.OutputFile)
+			return err
+		}
+	}
+
+	logger.Info("write-output-file", logger.Success, "winners received", winners)
 	return nil
 }

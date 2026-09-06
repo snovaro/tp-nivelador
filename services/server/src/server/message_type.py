@@ -6,3 +6,4 @@ class MessageType(Enum):
     BET = 0x02
     END = 0x03
     ACK = 0x04
+    WINNERS = 0x05

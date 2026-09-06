@@ -12,6 +12,11 @@ func parse_bet(betString string, agencyId string) (Bet, error) {
 		return Bet{}, fmt.Errorf("invalid bet format: %s", betString)
 	}
 
+	agencyIdUint, err := strconv.ParseUint(agencyId, 10, 8)
+	if err != nil {
+		return Bet{}, fmt.Errorf("invalid agency id: %s", agencyId)
+	}
+
 	name := parts[0]
 	surname := parts[1]
 
@@ -46,7 +51,7 @@ func parse_bet(betString string, agencyId string) (Bet, error) {
 	}
 
 	return Bet{
-		AgencyId:  agencyId,
+		AgencyId:  uint8(agencyIdUint),
 		Name:      name,
 		Surname:   surname,
 		DNI:       uint32(dni),
@@ -55,4 +60,15 @@ func parse_bet(betString string, agencyId string) (Bet, error) {
 		Day:       uint8(day),
 		BetNumber: uint16(betNumber),
 	}, nil
+}
+
+func unparse_bet(bet Bet) string {
+	return fmt.Sprintf("%s,%s,%d,%04d-%02d-%02d,%d",
+		bet.Name,
+		bet.Surname,
+		bet.DNI,
+		bet.Year,
+		bet.Month,
+		bet.Day,
+		bet.BetNumber)
 }

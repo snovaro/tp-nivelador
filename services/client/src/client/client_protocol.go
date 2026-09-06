@@ -27,10 +27,7 @@ func send_bet(conn net.Conn, bet Bet) error {
 
 func serialize_bet(bet Bet) ([]byte, error) {
 	logger.Info("serialize_bet", logger.InProgress, "serializing bet", bet)
-	agencyIdBytes := []byte(bet.AgencyId)
-	if len(agencyIdBytes) > 255 {
-		return nil, fmt.Errorf("agency id too long: %d bytes", len(agencyIdBytes))
-	}
+	agencyId := uint8(bet.AgencyId)
 	nameBytes := []byte(bet.Name)
 	if len(nameBytes) > 255 {
 		return nil, fmt.Errorf("name too long: %d bytes", len(nameBytes))
@@ -47,15 +44,15 @@ func serialize_bet(bet Bet) ([]byte, error) {
 	day := uint8(bet.Day)
 	betNumberBytes := make([]byte, 2)
 	binary.BigEndian.PutUint16(betNumberBytes, bet.BetNumber)
-	payload := build_bet_payload(agencyIdBytes, nameBytes, surnameBytes, dniBytes, yearBytes, month, day, betNumberBytes)
+	payload := build_bet_payload(agencyId, nameBytes, surnameBytes, dniBytes, yearBytes, month, day, betNumberBytes)
 
 	logger.Info("serialize_bet", logger.Success, "bet serialized", bet)
 	return payload, nil
 }
 
-func build_bet_payload(agencyIdBytes, nameBytes, surnameBytes, dniBytes, yearBytes []byte, month, day uint8, betNumberBytes []byte) []byte {
+func build_bet_payload(agencyId uint8, nameBytes, surnameBytes, dniBytes, yearBytes []byte, month, day uint8, betNumberBytes []byte) []byte {
 	var payload []byte
-	payload = appendString(payload, string(agencyIdBytes))
+	payload = append(payload, agencyId)
 	payload = appendString(payload, string(nameBytes))
 	payload = appendString(payload, string(surnameBytes))
 	payload = append(payload, dniBytes...)
@@ -94,14 +91,14 @@ func receive_message(conn net.Conn) (byte, []byte, error) {
 	logger.Info("receive_message", logger.InProgress, "receiving message")
 	header, err := safe_socket.RecvAll(conn, 3)
 	if err != nil {
-		logger.Error("receive_message", logger.Fail)
+		logger.Error("receive_header", logger.Fail)
 		return 0, nil, err
 	}
 	typeMessage := header[0]
 	payloadSize := binary.BigEndian.Uint16(header[1:])
 	payload, err := safe_socket.RecvAll(conn, int(payloadSize))
 	if err != nil {
-		logger.Error("receive_message", logger.Fail)
+		logger.Error("receive_payload", logger.Fail)
 		return 0, nil, err
 	}
 	logger.Info("receive_message", logger.Success, "message received", typeMessage)
@@ -117,4 +114,66 @@ func send_end(conn net.Conn) error {
 	}
 	logger.Info(action, logger.Success, "end message sent")
 	return nil
+}
+
+func deserialize_winners(payload []byte) ([]Bet, error) {
+	logger.Info("deserialize_winners", logger.InProgress, "deserializing winners")
+	var winners []Bet
+	offset := 0
+	for offset < len(payload) {
+		bet, bytesRead, err := deserialize_bet(payload[offset:])
+		if err != nil {
+			logger.Error("deserialize_winners", logger.Fail)
+			return nil, err
+		}
+		winners = append(winners, bet)
+		offset += bytesRead
+	}
+	logger.Info("deserialize_winners", logger.Success, "winners deserialized")
+	return winners, nil
+}
+
+func deserialize_bet(payload []byte) (Bet, int, error) {
+	logger.Info("deserialize_bet", logger.InProgress, "deserializing bet")
+	offset := 0
+
+	agencyId := payload[offset]
+	offset++
+
+	nameLength := int(payload[offset])
+	offset++
+	name := string(payload[offset : offset+nameLength])
+	offset += nameLength
+
+	surnameLength := int(payload[offset])
+	offset++
+	surname := string(payload[offset : offset+surnameLength])
+	offset += surnameLength
+
+	dni := binary.BigEndian.Uint32(payload[offset : offset+4])
+	offset += 4
+
+	year := binary.BigEndian.Uint16(payload[offset : offset+2])
+	offset += 2
+
+	month := payload[offset]
+	offset++
+
+	day := payload[offset]
+	offset++
+
+	betNumber := binary.BigEndian.Uint16(payload[offset : offset+2])
+	offset += 2
+
+	bet := Bet{
+		AgencyId:  uint8(agencyId),
+		Name:	 name,
+		Surname:   surname,
+		DNI:       dni,
+		Year:      year,
+		Month:     month,
+		Day:       day,
+		BetNumber: betNumber,
+	}
+	return bet, offset, nil
 }

@@ -29,7 +29,8 @@ class ServerProtocol:
     def deserialize_bet(self, payload: bytes) -> Bet:
         try:
             pos = 0
-            agency_id, pos = self.deserialize_string(payload, pos)
+            agency_id = payload[pos]
+            pos += 1
             name, pos = self.deserialize_string(payload, pos)
             surname, pos = self.deserialize_string(payload, pos)
             dni = int.from_bytes(payload[pos : pos + 4], byteorder="big")
@@ -63,3 +64,35 @@ class ServerProtocol:
     def send_ack(self) -> None:
         header = bytes([MessageType.ACK.value]) + (0).to_bytes(2, byteorder="big")
         self.send(header)
+
+
+    def send_winners(self, winners: list[Bet]) -> None:
+        payload = b""
+        for winner in winners:
+            payload += self.serialize_bet(winner)
+        type_message = MessageType.WINNERS
+        length = len(payload)
+        header = bytes([type_message.value]) + length.to_bytes(2, byteorder="big")
+        self.send(header + payload)
+
+
+    def serialize_bet(self, bet: Bet) -> bytes:
+        agency_id_bytes = bytes([bet.agency_id])
+        name_bytes = bet.first_name.encode("utf-8")
+        surname_bytes = bet.last_name.encode("utf-8")
+        dni_bytes = bet.document.to_bytes(4, byteorder="big")
+        year, month, day = map(int, bet.birthdate.split("-"))
+        year_bytes = year.to_bytes(2, byteorder="big")
+        month_byte = bytes([month])
+        day_byte = bytes([day])
+        bet_number_bytes = bet.number.to_bytes(2, byteorder="big")
+
+        payload = (
+            bytes(agency_id_bytes) +
+            bytes([len(name_bytes)]) + name_bytes +
+            bytes([len(surname_bytes)]) + surname_bytes +
+            dni_bytes +
+            year_bytes + month_byte + day_byte +
+            bet_number_bytes
+        )
+        return payload

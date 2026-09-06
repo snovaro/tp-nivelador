@@ -1,0 +1,6 @@
+tests/**
+*__init__*
+*.pyc
+*.pyd
+*.pyo
+*.csv

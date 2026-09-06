@@ -1,7 +1,7 @@
 package client
 
 type Bet struct {
-    AgencyId   string
+    AgencyId   uint8
     Name        string
     Surname     string
     DNI         uint32

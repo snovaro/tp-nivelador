@@ -69,6 +69,10 @@ class ClientHandler:
                             "messages-amount",
                             message_amount,
                         )
+                        bets = list(self.lottery.load_bets())
+                        winners = [bet for bet in bets if self.lottery.has_won(bet)]
+                        protocol.send_winners(winners)
+
                         return
                     case MessageType.ERROR:
                         logger.error(
