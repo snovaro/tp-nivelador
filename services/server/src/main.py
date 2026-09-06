@@ -4,9 +4,9 @@ import sys
 import logger
 import server
 
-SERVER_HOST = os.environ["SERVER_HOST"]
-SERVER_PORT = int(os.environ["SERVER_PORT"])
-STORAGE_PATH = os.environ["STORAGE_PATH"]
+SERVER_HOST = os.environ.get("SERVER_HOST", "localhost")
+SERVER_PORT = int(os.environ.get("SERVER_PORT", 8080))
+STORAGE_PATH = os.environ.get("STORAGE_PATH", "/storage/bets.csv")
 
 
 def main():

@@ -1,6 +1,7 @@
 import csv
 import os
 from collections.abc import Iterator
+from pathlib import Path
 from .bet import Bet
 
 _LOTTERY_WINNER_NUMBER = 7574
@@ -11,27 +12,17 @@ class Lottery:
         self.storage_path = storage_path
         self.agency_id = None
 
-    def set_agency_id(self, agency_id: int) -> None:
-        self.agency_id = agency_id
-
     def _resolve_storage_path(self) -> str:
-        if self.storage_path is None:
-            return None
-
-        if self.agency_id is None:
-            return self.storage_path
-
-        directory = os.path.dirname(self.storage_path)
-        agency_storage_filename = f"bets_{self.agency_id}.csv"
-        if directory:
-            return os.path.join(directory, agency_storage_filename)
-        return agency_storage_filename
-
+        if not os.path.isabs(self.storage_path):
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            return os.path.join(base_dir, self.storage_path)
+        return self.storage_path
     def has_won(self, bet: Bet) -> bool:
         return bet.number == _LOTTERY_WINNER_NUMBER
 
     def store_bets(self, bets: list[Bet]) -> None:
         storage_path = self._resolve_storage_path()
+        Path(storage_path).parent.mkdir(parents=True, exist_ok=True)
         with open(storage_path, "a+") as file:
             writer = csv.writer(file, quoting=csv.QUOTE_MINIMAL)
             for bet in bets:

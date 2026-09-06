@@ -54,7 +54,6 @@ class ClientHandler:
                             "bet deserialized",
                             logger.LogResult.success,
                         )
-                        self.lottery.set_agency_id(bet.agency_id)
                         self.lottery.store_bets([bet])
                         logger.info(
                             "bet stored",
