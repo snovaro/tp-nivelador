@@ -70,10 +70,10 @@ func appendString(payload []byte, value string) []byte {
 	return payload
 }
 
-func send_message(conn net.Conn, typeMessage byte, payload []byte) error {
+func send_message(conn net.Conn, typeMessage int, payload []byte) error {
 	logger.Info("send_message", logger.InProgress, "sending message", typeMessage)
 	var header [3]byte
-	header[0] = typeMessage
+	header[0] = byte(typeMessage)
 	if len(payload) > 65535 {
 		return fmt.Errorf("payload too large: %d bytes", len(payload))
 	}
@@ -176,4 +176,32 @@ func deserialize_bet(payload []byte) (Bet, int, error) {
 		BetNumber: betNumber,
 	}
 	return bet, offset, nil
+}
+
+func serialize_bets(bets []Bet) ([]byte, error) {
+	logger.Info("serialize_bets", logger.InProgress, "serializing bets", bets)
+	var payload []byte
+	for _, bet := range bets {
+		betPayload, err := serialize_bet(bet)
+		if err != nil {
+			logger.Error("serialize_bets", logger.Fail, "bet", bet)
+			return nil, err
+		}
+		payload = append(payload, betPayload...)
+	}
+	logger.Info("serialize_bets", logger.Success, "bets serialized", bets)
+	return payload, nil
+}
+
+func send_batch(conn net.Conn, bets []Bet) error {
+	typeMessage := BATCH
+	payload, err := serialize_bets(bets)
+	if err != nil {
+		return err
+	}
+	if err := send_message(conn, typeMessage, payload); err != nil {
+		return err
+	}
+	return nil
+	
 }

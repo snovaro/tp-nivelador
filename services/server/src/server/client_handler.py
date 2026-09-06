@@ -3,6 +3,7 @@ import logger
 from server.server_protocol import ServerProtocol
 from lottery.lottery import Lottery
 from server.message_type import MessageType
+from server.serializer import Serializer
 
 
 class ClientHandler:
@@ -10,14 +11,29 @@ class ClientHandler:
         self.client_socket = client_socket
         self.lottery = lottery
         self.is_alive = True
+        self.serializer = Serializer()
 
+
+
+    def handle_batch(self, protocol: ServerProtocol, payload: bytes):
+        logger.info(
+            "deserializing batch",
+            logger.LogResult.in_progress,
+        )
+        bets = self.serializer.deserialize_batch(payload)
+        self.lottery.store_bets(bets)
+        logger.info(
+            "bets stored",
+            logger.LogResult.success,
+        )
+        protocol.send_ack()
 
     def handle_bet(self, protocol: ServerProtocol, payload: bytes):
         logger.info(
             "deserializing bet",
             logger.LogResult.in_progress,
         )
-        bet = protocol.deserialize_bet(payload)
+        bet = self.serializer.deserialize_bet(payload)
         logger.info(
             "bet deserialized",
             logger.LogResult.success,
@@ -39,7 +55,7 @@ class ClientHandler:
         )
         bets = list(self.lottery.load_bets())
         winners = [bet for bet in bets if self.lottery.has_won(bet)]
-        protocol.send_winners(winners)
+        protocol.send_winners(self.serializer.serialize_winners(winners))
 
         self._kill()
 
@@ -67,8 +83,6 @@ class ClientHandler:
             logger.info(action, logger.LogResult.in_progress, "Receiving messages from client")
             while self.is_alive:
                 self.handle_message(protocol, message_amount)
-
-                    
         except ConnectionError as e:
             logger.error(
                     action,
@@ -98,6 +112,9 @@ class ClientHandler:
         match type_message:
             case MessageType.BET:
                 self.handle_bet(protocol, payload)
+                message_amount += 1
+            case MessageType.BATCH:
+                self.handle_batch(protocol, payload)
                 message_amount += 1
             case MessageType.END:
                 self.handle_end(protocol, message_amount)
