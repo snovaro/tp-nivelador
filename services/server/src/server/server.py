@@ -37,6 +37,7 @@ class Server:
                     client_thread = threading.Thread(target=client_handler.run)
                     client_thread.start()
                     self.client_handlers.append(client_thread)
+
             finally:
                 for client_thread in self.client_handlers:
                     client_thread.join()

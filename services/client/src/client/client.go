@@ -88,7 +88,7 @@ func (client *Client) Run() error {
 			logger.Error("receive-message", logger.Fail, messageArgs...)
 			return err
 		}
-		if typeMessage != 0x04 {
+		if typeMessage != ACK {
 			logger.Error("receive-message", logger.Fail, messageArgs...)
 			return err
 		}
@@ -106,7 +106,7 @@ func (client *Client) Run() error {
 		logger.Error("receive-winners", logger.Fail, "agency-id", client.config.AgencyId)
 		return err
 	}
-	if typeMessage != 0x05 {
+	if typeMessage != WINNERS {
 		logger.Error("receive-winners", logger.Fail, "agency-id", client.config.AgencyId)
 		return err
 	}

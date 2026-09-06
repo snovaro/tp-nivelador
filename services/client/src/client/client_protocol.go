@@ -17,7 +17,7 @@ func send_bet(conn net.Conn, bet Bet) error {
 		logger.Error(action, logger.Fail, "bet", bet)
 		return err
 	}
-	if err := send_message(conn, 0x02, payload); err != nil {
+	if err := send_message(conn, BET, payload); err != nil {
 		logger.Error(action, logger.Fail, "bet", bet)
 		return err
 	}
@@ -108,7 +108,7 @@ func receive_message(conn net.Conn) (byte, []byte, error) {
 func send_end(conn net.Conn) error {
 	const action = "send-end"
 	logger.Info(action, logger.InProgress, "sending end message")
-	if err := send_message(conn, 0x03, []byte{}); err != nil {
+	if err := send_message(conn, END, []byte{}); err != nil {
 		logger.Error(action, logger.Fail)
 		return err
 	}
