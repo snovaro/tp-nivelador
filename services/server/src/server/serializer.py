@@ -1,6 +1,4 @@
 from lottery.bet import Bet
-from safe_socket.safe_socket import recv_all, send_all
-from server.message_type import MessageType
 
 class Serializer:
 

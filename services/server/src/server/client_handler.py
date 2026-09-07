@@ -62,13 +62,6 @@ class ClientHandler(threading.Thread):
 
         self.kill()
 
-    def handle_error(self):
-        logger.error(
-            "error message received",
-            logger.LogResult.fail,
-        )
-        self.kill()
-
     def handle_unknown_message_type(self, type_message):
         logger.error(
             "unknown message type",
@@ -118,8 +111,6 @@ class ClientHandler(threading.Thread):
                 self.handle_batch(protocol, payload)
             case MessageType.END:
                 self.handle_end(protocol, payload)
-            case MessageType.ERROR:
-                self.handle_error()
             case _:
                 self.handle_unknown_message_type(type_message)
 
