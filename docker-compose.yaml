@@ -9,7 +9,7 @@ services:
       - SERVER_HOST=server
       - SERVER_PORT=5678
       - STORAGE_PATH=/storage/bets.csv
-      - AGENCY_QUORUM_MIN=5
+      - AGENCY_QUORUM_MIN=6
     volumes:
       - ./storage:/storage
     ports:

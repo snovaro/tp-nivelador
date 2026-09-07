@@ -1,4 +1,5 @@
 import socket
+import threading
 import logger
 from server.server_protocol import ServerProtocol
 from lottery.lottery import Lottery
@@ -6,9 +7,9 @@ from server.message_type import MessageType
 from server.serializer import Serializer
 from server.server_state import ServerState
 
-
-class ClientHandler:
+class ClientHandler(threading.Thread):
     def __init__(self, client_socket: socket.socket, lottery: Lottery, server_state: ServerState) -> None:
+        super().__init__()
         self.client_socket = client_socket
         self.lottery = lottery
         self.is_alive = True
@@ -47,12 +48,10 @@ class ClientHandler:
         
         protocol.send_ack()
 
-    def handle_end(self, protocol: ServerProtocol, payload: bytes, message_amount: int):
+    def handle_end(self, protocol: ServerProtocol, payload: bytes):
         logger.info(
             "end message received",
             logger.LogResult.success,
-            "messages-amount",
-            message_amount,
         )
         agency_id = payload[0]
         self.server_state.finished_client()
@@ -61,14 +60,14 @@ class ClientHandler:
         winners = [bet for bet in bets if self.lottery.has_won(bet) and bet.agency_id == agency_id]
         protocol.send_winners(self.serializer.serialize_winners(winners))
 
-        self._kill()
+        self.kill()
 
     def handle_error(self):
         logger.error(
             "error message received",
             logger.LogResult.fail,
         )
-        self._kill()
+        self.kill()
 
     def handle_unknown_message_type(self, type_message):
         logger.error(
@@ -77,16 +76,15 @@ class ClientHandler:
             "message-type",
             type_message,
         )
-        self._kill()
+        self.kill()
     
     def _handle_client(self, client_socket):
         action = "handle-client"
-        message_amount = 0
         protocol = ServerProtocol(client_socket)
         try:
             logger.info(action, logger.LogResult.in_progress, "Receiving messages from client")
             while self.is_alive:
-                self.handle_message(protocol, message_amount)
+                self.handle_message(protocol)
         except ConnectionError as e:
             logger.error(
                     action,
@@ -97,13 +95,13 @@ class ClientHandler:
             return
         except Exception as e:
             logger.error(
-                action, logger.LogResult.fail, "messages-amount", message_amount
+                action, logger.LogResult.fail, "unexpected-error", e
             )
             raise e
         finally:
             client_socket.close()
 
-    def handle_message(self, protocol: ServerProtocol, message_amount: int):
+    def handle_message(self, protocol: ServerProtocol):
         action = "handle-message"
         type_message, payload = protocol.receive_message()
         logger.info(
@@ -116,12 +114,10 @@ class ClientHandler:
         match type_message:
             case MessageType.BET:
                 self.handle_bet(protocol, payload)
-                message_amount += 1
             case MessageType.BATCH:
                 self.handle_batch(protocol, payload)
-                message_amount += 1
             case MessageType.END:
-                self.handle_end(protocol, payload, message_amount)
+                self.handle_end(protocol, payload)
             case MessageType.ERROR:
                 self.handle_error()
             case _:
@@ -130,5 +126,10 @@ class ClientHandler:
     def run(self):
         self._handle_client(self.client_socket)
 
-    def _kill(self):
+    def kill(self):
         self.is_alive = False
+        try:
+            self.client_socket.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
+        self.client_socket.close()

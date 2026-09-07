@@ -10,7 +10,6 @@ class ServerState:
         self.started_clients = 0
         self.quorum_min = quorum_min
 
-
     def client_started(self):
         with self.cv:
             if self.is_draw_complete():
@@ -32,3 +31,9 @@ class ServerState:
         with self.cv:
             while not self.is_draw_complete():
                 self.cv.wait()
+
+    def shutdown(self):
+        with self.cv:
+            self.finished_clients = self.quorum_min
+            self.started_clients = 0
+            self.cv.notify_all()

@@ -30,3 +30,17 @@ BET PAYLOAD
 
 
 Mi idea de started_client es que no se haga el sorteo si hay agencias enviando apuestas.  Y que si ya se hizo el sorteo cuando entra un cliente salte la excepcion y se cree un nuevo state para esa nueva agencia, que tenga que esperar quorum para el nuevo sorteo
+
+
+santi@fedora:~/Desktop/FIUBA/Distri-I/tp-nivelador$ make test
+rm failed_test.log -f
+PYTHONPATH="/home/santi/Desktop/FIUBA/Distri-I/tp-nivelador" python3 tests/run.py
+Testing json import.....................OK
+Testing forced exit.....................OK
+Testing winners list in output files....OK
+Testing spawned processes/threads.......OK
+Testing memory profile..................OK
+Testing sigterm handling................OK
+Testing client short read/write.........OK
+Testing server short read/write.........OK
+Testing batching........................OK

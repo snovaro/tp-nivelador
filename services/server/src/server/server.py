@@ -1,3 +1,4 @@
+import signal
 import socket
 import logger
 from lottery.lottery import Lottery
@@ -16,35 +17,47 @@ class Server:
         self.storage_path = storage_path
         self.client_handlers = []
         self.server_state = ServerState(quorum_min)
+        self.shutdown_event = threading.Event()
 
+        signal.signal(
+            signal.SIGTERM,
+            self.handle_sigterm
+        )
+
+    def handle_sigterm(self, signum, frame):
+        logger.info("shutdown", logger.LogResult.in_progress)
+        self.shutdown_event.set()
+        self.server_state.shutdown()
+        
 
     def run(self):
-        action = "accept-connection"
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
             server_socket.bind((self.server_host, self.server_port))
             server_socket.listen()
             try:
-                while True:
-                    self.accepter_loop(server_socket)
+                self.accepter_loop(server_socket)
 
             finally:
-                for client_thread in self.client_handlers:
-                    client_thread.join()
+                for client_handler in self.client_handlers:
+                    client_handler.kill()
+                    client_handler.join()
 
     def accepter_loop(self, server_socket: socket.socket):
-        while True:
+        server_socket.settimeout(1.0)
+        while not self.shutdown_event.is_set():
             try:
                 logger.info("accept-connection", logger.LogResult.in_progress)
                 client_socket, _ = server_socket.accept()
+            except socket.timeout:
+                continue
             except Exception as e:
                 logger.error("accept-connection", logger.LogResult.fail)
                 raise e
             logger.info("accept-connection", logger.LogResult.success)
             self.start_client()
             client_handler = ClientHandler(client_socket, Lottery(self.storage_path), self.server_state)
-            client_thread = threading.Thread(target=client_handler.run)
-            client_thread.start()
-            self.client_handlers.append(client_thread)
+            client_handler.start()
+            self.client_handlers.append(client_handler)
 
     def start_client(self):
         try:

@@ -5,6 +5,8 @@ import (
 	"os"
 	"net"
 	"time"
+	"context"
+	"errors"
 
 	"github.com/7574-sistemas-distribuidos/tp-nivelador/src/logger"
 )
@@ -59,7 +61,7 @@ func connectToServer(host, port string) (net.Conn, error) {
 	return conn, err
 }
 
-func (client *Client) Run() error {
+func (client *Client) Run(ctx context.Context) error {
 	defer client.conn.Close()
 	file, err := os.Open(client.config.InputFile)
 	if err != nil {
@@ -71,6 +73,11 @@ func (client *Client) Run() error {
 	bets := make([]Bet, 0, client.config.BatchSize)
 
 	for scanner.Scan() {
+		select {
+		case <-ctx.Done():
+            return nil
+		default:
+		}
 		clientMessage := scanner.Text()
 		messageArgs := []any{"agency-id", client.config.AgencyId, "message", clientMessage}
 		logger.Info("parse-bet", logger.InProgress, messageArgs...)
@@ -101,7 +108,7 @@ func (client *Client) Run() error {
 		}
 		if typeMessage != ACK {
 			logger.Error("receive-message", logger.Fail, messageArgs...)
-			return err
+			return errors.New("expected ACK")
 		}
 		logger.Info("ACK received", logger.Success, messageArgs...)
 
@@ -119,7 +126,7 @@ func (client *Client) Run() error {
 		}
 		if typeMessage != ACK {
 			logger.Error("receive-message", logger.Fail, "agency-id", client.config.AgencyId)
-			return err
+			return errors.New("expected ACK")
 		}
 		logger.Info("ACK received", logger.Success, "agency-id", client.config.AgencyId)
 	}
@@ -162,4 +169,9 @@ func (client *Client) Run() error {
 
 	logger.Info("write-output-file", logger.Success, "winners received", winners)
 	return nil
+}
+
+
+func (client *Client) Close() {
+	client.conn.Close()
 }
