@@ -28,8 +28,8 @@ class Serializer:
             pos += 1
             day = payload[pos]
             pos += 1
-            bet_number = int.from_bytes(payload[pos : pos + 2], byteorder="big")
-            pos += 2
+            bet_number = int.from_bytes(payload[pos : pos + 4], byteorder="big")
+            pos += 4
         except IndexError:
             raise ValueError("Payload is too short to deserialize Bet")
         except Exception as e:
@@ -60,7 +60,7 @@ class Serializer:
         year_bytes = year.to_bytes(2, byteorder="big")
         month_byte = bytes([month])
         day_byte = bytes([day])
-        bet_number_bytes = bet.number.to_bytes(2, byteorder="big")
+        bet_number_bytes = bet.number.to_bytes(4, byteorder="big")
 
         payload = (
             bytes(agency_id_bytes) +

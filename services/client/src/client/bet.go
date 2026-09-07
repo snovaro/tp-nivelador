@@ -8,5 +8,5 @@ type Bet struct {
     Year        uint16
     Month       uint8
     Day         uint8
-    BetNumber   uint16
+    BetNumber   uint32
 }

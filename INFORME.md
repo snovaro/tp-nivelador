@@ -26,4 +26,7 @@ BET PAYLOAD
     year:             uint16
     month:            uint8
     day:              uint8
-    bet_number:       uint16
+    bet_number:       uint32
+
+
+Mi idea de started_client es que no se haga el sorteo si hay agencias enviando apuestas.  Y que si ya se hizo el sorteo cuando entra un cliente salte la excepcion y se cree un nuevo state para esa nueva agencia, que tenga que esperar quorum para el nuevo sorteo

@@ -40,7 +40,7 @@ func parse_bet(betString string, agencyId int) (Bet, error) {
 		return Bet{}, fmt.Errorf("invalid day: %s", dateParts[2])
 	}
 
-	betNumber, err := strconv.ParseUint(parts[4], 10, 16)
+	betNumber, err := strconv.ParseUint(parts[4], 10, 32)
 	if err != nil {
 		return Bet{}, fmt.Errorf("invalid bet number: %s", parts[4])
 	}
@@ -53,7 +53,7 @@ func parse_bet(betString string, agencyId int) (Bet, error) {
 		Year:      uint16(year),
 		Month:     uint8(month),
 		Day:       uint8(day),
-		BetNumber: uint16(betNumber),
+		BetNumber: uint32(betNumber),
 	}, nil
 }
 

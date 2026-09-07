@@ -42,8 +42,8 @@ func serialize_bet(bet Bet) ([]byte, error) {
 	binary.BigEndian.PutUint16(yearBytes, bet.Year)
 	month := uint8(bet.Month)
 	day := uint8(bet.Day)
-	betNumberBytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(betNumberBytes, bet.BetNumber)
+	betNumberBytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(betNumberBytes, bet.BetNumber)
 	payload := build_bet_payload(agencyId, nameBytes, surnameBytes, dniBytes, yearBytes, month, day, betNumberBytes)
 
 	logger.Info("serialize_bet", logger.Success, "bet serialized", bet)
@@ -162,8 +162,8 @@ func deserialize_bet(payload []byte) (Bet, int, error) {
 	day := payload[offset]
 	offset++
 
-	betNumber := binary.BigEndian.Uint16(payload[offset : offset+2])
-	offset += 2
+	betNumber := binary.BigEndian.Uint32(payload[offset : offset+4])
+	offset += 4
 
 	bet := Bet{
 		AgencyId:  uint8(agencyId),
