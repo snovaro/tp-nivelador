@@ -4,15 +4,16 @@ from server.server_protocol import ServerProtocol
 from lottery.lottery import Lottery
 from server.message_type import MessageType
 from server.serializer import Serializer
+from server.server_state import ServerState
 
 
 class ClientHandler:
-    def __init__(self, client_socket: socket.socket, lottery: Lottery) -> None:
+    def __init__(self, client_socket: socket.socket, lottery: Lottery, server_state: ServerState) -> None:
         self.client_socket = client_socket
         self.lottery = lottery
         self.is_alive = True
         self.serializer = Serializer()
-
+        self.server_state = server_state
 
 
     def handle_batch(self, protocol: ServerProtocol, payload: bytes):
@@ -54,6 +55,8 @@ class ClientHandler:
             message_amount,
         )
         agency_id = payload[0]
+        self.server_state.finished_client()
+        self.server_state.wait_for_quorum()
         bets = list(self.lottery.load_bets())
         winners = [bet for bet in bets if self.lottery.has_won(bet) and bet.agency_id == agency_id]
         protocol.send_winners(self.serializer.serialize_winners(winners))
