@@ -105,10 +105,10 @@ func receive_message(conn net.Conn) (byte, []byte, error) {
 	return typeMessage, payload, nil
 }
 
-func send_end(conn net.Conn) error {
+func send_end(conn net.Conn, agencyId uint8) error {
 	const action = "send-end"
 	logger.Info(action, logger.InProgress, "sending end message")
-	if err := send_message(conn, END, []byte{}); err != nil {
+	if err := send_message(conn, END, []byte{agencyId}); err != nil {
 		logger.Error(action, logger.Fail)
 		return err
 	}

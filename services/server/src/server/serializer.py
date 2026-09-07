@@ -78,9 +78,9 @@ class Serializer:
         pos = 0
         while pos < len(payload):
             try:
-                bet, new_pos = self._deserialize_bet_from_batch(payload, pos)
+                bet, new_pos = self._deserialize_bet(payload[pos:])
                 bets.append(bet)
-                pos = new_pos
+                pos += new_pos
             except ValueError as e:
                 raise ValueError(f"Error while deserializing batch: {e}")
         self._check_payload_length(payload, pos)

@@ -16,9 +16,10 @@ const CONNECTION_ATTEMPS_DELAY_MS = 200
 type ClientConfig struct {
 	ServerHost string
 	ServerPort string
-	AgencyId   string
+	AgencyId   int
 	InputFile  string
 	OutputFile string
+	BatchSize  int
 }
 
 type Client struct {
@@ -67,21 +68,31 @@ func (client *Client) Run() error {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
+	bets := make([]Bet, 0, client.config.BatchSize)
 
 	for scanner.Scan() {
 		clientMessage := scanner.Text()
 		messageArgs := []any{"agency-id", client.config.AgencyId, "message", clientMessage}
 		logger.Info("parse-bet", logger.InProgress, messageArgs...)
 		bet, err := parse_bet(clientMessage, client.config.AgencyId)
+
 		if err != nil {
 			logger.Error("parse-bet", logger.Fail, messageArgs...)
 			return err
 		}
 
-		if err := send_bet(client.conn, bet); err != nil {
-			logger.Error("parse-bet", logger.Fail, messageArgs...)
+		bets = append(bets, bet)
+
+		if len(bets) < client.config.BatchSize {
+			continue
+		}
+
+		if err := send_batch(client.conn, bets); err != nil {
+			logger.Error("send-batch", logger.Fail, messageArgs...)
 			return err
 		}
+
+		bets = bets[:0]
 
 		typeMessage, _, err := receive_message(client.conn)
 		if err != nil {
@@ -95,8 +106,25 @@ func (client *Client) Run() error {
 		logger.Info("ACK received", logger.Success, messageArgs...)
 
 	}
+
+	if len(bets) > 0 {
+		if err := send_batch(client.conn, bets); err != nil {
+			logger.Error("send-batch", logger.Fail, "agency-id", client.config.AgencyId)
+			return err
+		}
+		typeMessage, _, err := receive_message(client.conn)
+		if err != nil {
+			logger.Error("receive-message", logger.Fail, "agency-id", client.config.AgencyId)
+			return err
+		}
+		if typeMessage != ACK {
+			logger.Error("receive-message", logger.Fail, "agency-id", client.config.AgencyId)
+			return err
+		}
+		logger.Info("ACK received", logger.Success, "agency-id", client.config.AgencyId)
+	}
 	logger.Info("send end", logger.Success, "agency-id", client.config.AgencyId)
-	if err:= send_end(client.conn); err != nil {
+	if err:= send_end(client.conn, uint8(client.config.AgencyId)); err != nil {
 		logger.Error("send end", logger.Fail, "agency-id", client.config.AgencyId)
 		return err
 	}

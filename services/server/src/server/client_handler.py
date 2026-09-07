@@ -46,20 +46,21 @@ class ClientHandler:
         
         protocol.send_ack()
 
-    def handle_end(self, protocol: ServerProtocol, message_amount: int):
+    def handle_end(self, protocol: ServerProtocol, payload: bytes, message_amount: int):
         logger.info(
             "end message received",
             logger.LogResult.success,
             "messages-amount",
             message_amount,
         )
+        agency_id = payload[0]
         bets = list(self.lottery.load_bets())
-        winners = [bet for bet in bets if self.lottery.has_won(bet)]
+        winners = [bet for bet in bets if self.lottery.has_won(bet) and bet.agency_id == agency_id]
         protocol.send_winners(self.serializer.serialize_winners(winners))
 
         self._kill()
 
-    def hanlde_error(self):
+    def handle_error(self):
         logger.error(
             "error message received",
             logger.LogResult.fail,
@@ -117,9 +118,9 @@ class ClientHandler:
                 self.handle_batch(protocol, payload)
                 message_amount += 1
             case MessageType.END:
-                self.handle_end(protocol, message_amount)
+                self.handle_end(protocol, payload, message_amount)
             case MessageType.ERROR:
-                self.hanlde_error()
+                self.handle_error()
             case _:
                 self.handle_unknown_message_type(type_message)
 
