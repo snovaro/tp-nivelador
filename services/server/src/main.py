@@ -6,7 +6,7 @@ import server
 
 SERVER_HOST = os.environ.get("SERVER_HOST", "localhost")
 SERVER_PORT = int(os.environ.get("SERVER_PORT", 8080))
-STORAGE_PATH = os.environ.get("STORAGE_PATH", "/storage/bets.csv")
+STORAGE_PATH = os.environ.get("STORAGE_PATH", "/storage")
 QUORUM_MIN = int(os.environ.get("AGENCY_QUORUM_MIN", 1))
 
 
