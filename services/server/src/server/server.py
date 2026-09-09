@@ -15,6 +15,8 @@ class Server:
         self.server_host = server_host
         self.server_port = server_port
         self.storage_path = storage_path
+        self.draw = 1
+        self.lottery = Lottery(self.storage_path + f"/draw_{self.draw}.csv")
         self.client_handlers = []
         self.server_state = ServerState(quorum_min)
         self.shutdown_event = threading.Event()
@@ -55,7 +57,7 @@ class Server:
                 raise e
             logger.info("accept-connection", logger.LogResult.success)
             self.start_client()
-            client_handler = ClientHandler(client_socket, Lottery(self.storage_path), self.server_state)
+            client_handler = ClientHandler(client_socket, self.lottery, self.server_state)
             client_handler.start()
             self.client_handlers.append(client_handler)
 
@@ -63,5 +65,7 @@ class Server:
         try:
             self.server_state.client_started()
         except DrawCompleteException as e:
+            self.draw += 1
+            self.lottery = Lottery(self.storage_path + f"/draw_{self.draw}.csv")
             self.server_state = ServerState(self.server_state.quorum_min)
             self.server_state.client_started()
