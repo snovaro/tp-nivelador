@@ -74,7 +74,7 @@ Una vez establecida la conexión, el cliente envía sus apuestas al servidor. Pa
 
 El tamaño del batch es configurable. Una vez alcanzado dicho tamaño, el cliente envía el conjunto de apuestas al servidor y espera la confirmación correspondiente antes de continuar.
 
-Al finalizar el archivo de entrada, el cliente envía un mensaje `FIN`, indicando que ya no enviará más apuestas.
+Al finalizar el archivo de entrada, el cliente envía un mensaje `END`, indicando que ya no enviará más apuestas.
 
 Luego del procesamiento y sorteo correspondiente, el servidor envía los ganadores a cada cliente, que los deserializa y escribe en su archivo de salida.
 
